@@ -65,7 +65,19 @@
     					return translate;
     				});
 
-    		console.log(series)
+			currentSeriesY = 0;
+
+    		viz.selectAll("text")
+				.data(nested_data)
+    			.enter()
+    			.append("text")    				
+    				.attr("x", 0)
+    				.attr("y", (d, i) => {
+    					var midY = currentSeriesY + (d.values.length * squareSize / 2);
+    					currentSeriesY += squareSize * d.values.length;    			
+    					return midY;		    				
+    				})
+    				.text(d => { return d.key; })
 
     		var seasons = series.selectAll("g")
     			.data(d => { return d.values; })
@@ -77,13 +89,6 @@
     					translate = "translate(200, " + squareSize * i + ")";
     					return translate;
 					});	
-
-			series.selectAll("text")
-				.data(d => { 
-					console.log(d)
-					return d.values; })
-    			.enter()
-    			.append("text", d => { return d.key; })
 
     		seasons.selectAll("rect")
     			.data(d => { return d.values; })
