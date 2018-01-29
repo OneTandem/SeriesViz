@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title></title>
+</head>
+<body>
+	<div id="viz"></div>
+	<script src="https://d3js.org/d3.v4.min.js"></script>
+	<script>
+		d3.csv("series_2017.csv", (error, data) => {
+			console.log(data);
+			data.forEach(d => {
+				d.Deviation = +d.Deviation;
+				//d.Episode = +d.Episode;
+				//d.Season = +d.Season;
+				d["User Rating"] = +d["User Rating"];
+				d["User Votes"] = +d["User Votes"];
+			});
+
+			var deviation_range = d3.extent(data, d => { return d.Deviation; })
+				color = d3.scaleLinear()
+					.domain([deviation_range[0], 0, deviation_range[1]])
+    				//.range(["#9E3D22", "white", "#2B5C8A"]);
+    				.range(["red", "#eee", "green"])
+
+    		console.log(deviation_range)
+
+			var nested_data = d3.nest()
+				.key(function(d) { return d.Serie; })
+				.key(function(d) { return d.Season; })
+				//.key(function(d) { return d.Episode; })
+				.entries(data);
+
+			console.log(nested_data)
+
+			const width = 800, 
+				height = 800;				
+
+			const margin = {top: 10, right: 10, bottom: 10, left: 10};
+
+			var vizWidth = width - margin.left - margin.right,
+				vizHeight = height - margin.top - margin.bottom,
+				squareSize = (vizHeight-10) / 48;
+
+				console.log(squareSize)
+
+			var currentSeriesY = 0;
+
+			var viz = d3.select("#viz").append("svg")
+				.attr("width", vizWidth)
+				.attr("height", vizHeight)
+				.append("g")
+    				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    		var series = viz.selectAll("g")
+    			.data(nested_data)
+    			.enter()
+    			.append("g")
+    				.attr("class", "serie")
+    				.attr("transform", (d, i) => { 
+    					console.log(d);    					
+    					translate = "translate(0, " + currentSeriesY + ")";
+    					currentSeriesY += squareSize * d.values.length;
+    					return translate;
+    				});
+
+    		console.log(series)
+
+    		var seasons = series.selectAll("g")
+    			.data(d => { return d.values; })
+    			.enter()
+    			.append("g")
+    				.attr("class", "season")    				
+    				.attr("transform", (d, i) => { 
+    					console.log(d);    					
+    					translate = "translate(200, " + squareSize * i + ")";
+    					return translate;
+					});	
+
+			series.selectAll("text")
+				.data(d => { 
+					console.log(d)
+					return d.values; })
+    			.enter()
+    			.append("text", d => { return d.key; })
+
+    		seasons.selectAll("rect")
+    			.data(d => { return d.values; })
+    			.enter()
+    			.append("rect")
+    				.attr("width", squareSize)
+    				.attr("height", squareSize)
+    				.attr("x", (d, i) => {
+    					return i * squareSize;
+    				})
+    				.attr("y", 0)
+    				.attr("fill", d => { return color(d.Deviation); })
+    				.style("stroke", "white");    		
+		});
+	</script>
+
+</body>
+</html>
