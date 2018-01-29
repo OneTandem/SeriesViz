@@ -12,8 +12,8 @@
 			console.log(data);
 			data.forEach(d => {
 				d.Deviation = +d.Deviation;
-				//d.Episode = +d.Episode;
-				//d.Season = +d.Season;
+				d.Episode = +d.Episode;
+				d.Season = +d.Season;
 				d["User Rating"] = +d["User Rating"];
 				d["User Votes"] = +d["User Votes"];
 			});
@@ -37,7 +37,7 @@
 			const width = 800, 
 				height = 800;				
 
-			const margin = {top: 10, right: 10, bottom: 10, left: 10};
+			const margin = {top: 20, right: 10, bottom: 10, left: 10};
 
 			var vizWidth = width - margin.left - margin.right,
 				vizHeight = height - margin.top - margin.bottom,
@@ -53,6 +53,15 @@
 				.append("g")
     				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+    		console.log(d3.range(1, d3.max(data, d => { return d.Episode; })))
+    		viz.selectAll("text")
+    			.data(d3.range(1, d3.max(data, d => { return d.Episode; })))
+    			.enter()
+    				.append("text")
+    					.attr("x", (d, i) => { return squareSize * i + 200; })
+    					.attr("y", -5)
+    					.text(d => { return d; })
+
     		var series = viz.selectAll("g")
     			.data(nested_data)
     			.enter()
@@ -67,7 +76,7 @@
 
 			currentSeriesY = 0;
 
-    		viz.selectAll("text")
+    		series.selectAll("text")
 				.data(nested_data)
     			.enter()
     			.append("text")    				
