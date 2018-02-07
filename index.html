@@ -27,21 +27,36 @@
     		console.log(deviation_range)
 
 			var nested_data = d3.nest()
-				.key(function(d) { return d.Serie; })
+				.key(function(d) { return d.Serie; })								
 				.key(function(d) { return d.Season; })
+		
 				//.key(function(d) { return d.Episode; })
+				.rollup(function(leaves) { 
+					return {
+						avg_rating: d3.mean(leaves, p => { return p["User Rating"]; }),
+						total_rating: d3.sum(leaves, p => { return p["User Rating"]; }),
+						episodes: leaves
+					}})
 				.entries(data);
+
+			nested_data.forEach(d => {
+				d.avg_rating = d3.mean(d.values, p => { 
+					console.log(p)
+					return p.value.avg_rating; })
+			});
+
+			var total_seasons = d3.sum(nested_data, d => { return d.values.length; }) + 1;
 
 			console.log(nested_data)
 
 			const width = 800, 
-				height = 800;				
+				height = 1100;				
 
 			const margin = {top: 20, right: 10, bottom: 10, left: 10};
 
 			var vizWidth = width - margin.left - margin.right,
 				vizHeight = height - margin.top - margin.bottom,
-				squareSize = (vizHeight-10) / 48;
+				squareSize = (vizHeight) / total_seasons;
 
 				console.log(squareSize)
 
@@ -53,7 +68,6 @@
 				.append("g")
     				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-    		console.log(d3.range(1, d3.max(data, d => { return d.Episode; })))
     		viz.selectAll("text")
     			.data(d3.range(1, d3.max(data, d => { return d.Episode; })))
     			.enter()
@@ -63,7 +77,10 @@
     					.text(d => { return d; })
 
     		var series = viz.selectAll("g")
-    			.data(nested_data)
+    			.data(nested_data.sort((a, b) => { 
+    				console.log(a)
+    				return d3.descending;
+    			}))
     			.enter()
     			.append("g")
     				.attr("class", "serie")
@@ -79,7 +96,8 @@
     		series.selectAll("text")
 				.data(nested_data)
     			.enter()
-    			.append("text")    				
+    			.append("text")
+    				.attr("class", "seriesname")	
     				.attr("x", 0)
     				.attr("y", (d, i) => {
     					var midY = currentSeriesY + (d.values.length * squareSize / 2);
@@ -94,13 +112,12 @@
     			.append("g")
     				.attr("class", "season")    				
     				.attr("transform", (d, i) => { 
-    					console.log(d);    					
     					translate = "translate(200, " + squareSize * i + ")";
     					return translate;
 					});	
 
     		seasons.selectAll("rect")
-    			.data(d => { return d.values; })
+    			.data(d => { return d.value.episodes; })
     			.enter()
     			.append("rect")
     				.attr("width", squareSize)
@@ -110,7 +127,15 @@
     				})
     				.attr("y", 0)
     				.attr("fill", d => { return color(d.Deviation); })
-    				.style("stroke", "white");    		
+    				.style("stroke", "white");   
+
+    		/*series.selectAll("text")
+    			 .data(d => { return d.values; })
+    			 .enter()
+    			 .append("text")
+	    			 .attr("x", -10)
+    				.attr("y", squareSize)
+    				.text(d => { return d.key; })*/
 		});
 	</script>
 
