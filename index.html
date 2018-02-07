@@ -25,6 +25,7 @@
     				.range(["red", "#eee", "green"])
 
     		console.log(deviation_range);
+    		//data = data.sort((a, b) => { return d3.ascending(a.Serie, b.Serie)});
 
     		var nested_data_by_series = d3.nest()
 				.key(function(d) { return d.Serie; })								
@@ -46,6 +47,7 @@
 						total_rating: d3.sum(leaves, p => { return p["User Rating"]; }),
 						episodes: leaves
 					}})
+				.sortKeys(d3.ascending)
 				.entries(data);
 
 			nested_data.forEach((d, i) => {
@@ -84,10 +86,8 @@
     					.text(d => { return d; })
 
     		var series = viz.selectAll("g")
-    			.data(nested_data.sort((a, b) => { 
-    				console.log(a)
-    				return d3.descending;
-    			}))
+    			//.data(nested_data)
+    			.data(nested_data.sort((a, b) => { return d3.ascending(a.key, b.key) }))
     			.enter()
     			.append("g")
     				.attr("class", "serie")
