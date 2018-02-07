@@ -24,7 +24,16 @@
     				//.range(["#9E3D22", "white", "#2B5C8A"]);
     				.range(["red", "#eee", "green"])
 
-    		console.log(deviation_range)
+    		console.log(deviation_range);
+
+    		var nested_data_by_series = d3.nest()
+				.key(function(d) { return d.Serie; })								
+		
+				//.key(function(d) { return d.Episode; })
+				.rollup((leaves) => { return d3.mean(leaves, p => { return p["User Rating"]; }) })
+				.entries(data);
+
+			console.log(nested_data_by_series)
 
 			var nested_data = d3.nest()
 				.key(function(d) { return d.Serie; })								
@@ -39,10 +48,8 @@
 					}})
 				.entries(data);
 
-			nested_data.forEach(d => {
-				d.avg_rating = d3.mean(d.values, p => { 
-					console.log(p)
-					return p.value.avg_rating; })
+			nested_data.forEach((d, i) => {
+				nested_data[i].avg_rating = nested_data_by_series[i].value;
 			});
 
 			var total_seasons = d3.sum(nested_data, d => { return d.values.length; }) + 1;
