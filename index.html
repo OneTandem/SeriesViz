@@ -2,12 +2,34 @@
 <html>
 <head>
 	<meta charset="utf-8">
-	<title></title>
+	<title>Series Visualization by @vpascual</title>
+	<style type="text/css">
+		body {
+			 font-family: "Avenir Next" !important;
+			 font-size: 12px;
+		}
+
+		#buttons {
+			margin: 20px;
+			text-align: center;
+		}
+
+		#viz {
+			margin: auto;
+			text-align: center;
+		}
+
+		.season {
+			font-size: 14px !important;
+		}
+	</style>
 </head>
 <body>
-	<button id="alphabetically">Sort alphabetically</button>
-	<button id="rating">Sort by avg rating</button>
-	<button id="votes">Sort by avg votes</button>
+	<div id="buttons">
+		<button id="alphabetically" style="border-style:inset;">Sort alphabetically</button>
+		<button id="rating">Sort by avg rating</button>
+		<button id="votes">Sort by avg votes</button>
+	</div>
 	<div id="viz"></div>
 	<script src="https://d3js.org/d3.v4.min.js"></script>
 	<script>
@@ -55,7 +77,6 @@
 						avg_votes: d3.mean(leaves, p => { return p["User Votes"]; }),
 						episodes: leaves
 					}})
-				.sortKeys(d3.ascending)
 				.entries(data);
 
 			nested_data.forEach((d, i) => {
@@ -131,10 +152,11 @@
     					return translate;
 					});	
 
-			seasons.selectAll("text")    			 
+			seasons   			 
     			 .append("text")
-	    			.attr("x", -10)
-    				.attr("y", 0)
+	    			.attr("x", -5)
+    				.attr("y", squareSize - 5)
+    				.attr("text-anchor", "end")
     				.text(d => { 
     					console.log(d)
     					return d.key; })
@@ -142,25 +164,28 @@
     		seasons.selectAll("rect")
     			.data(d => { return d.value.episodes; })
     			.enter()
-    			.append("rect")
-    				.attr("width", 0)
-    				.attr("height", 0)
+    			.append("rect")    				
+					.attr("width", squareSize)
+					.attr("height", squareSize)
     				.attr("x", (d, i) => {
     					return i * squareSize;
     				})
     				.attr("y", 0)
     				.attr("fill", d => { return color(d.Deviation); })
-    				.style("stroke", "white")
-    				.transition()
-    					.duration(500)
-    					.ease(d3.easeBounceInOut)
-    					.attr("width", squareSize)
-    					.attr("height", squareSize)
+    				.style("stroke", "white") 	
 
 
 
     		d3.selectAll("button")
-    			.on("click", d => { sortByAvgRating(d3.event.target.id); })
+    			.on("click", d => { 
+    				d3.selectAll("button")
+    					.style("border-style", null);
+
+    				d3.select(d3.event.target)
+    					.style("border-style", "inset");
+    					
+    				sortByAvgRating(d3.event.target.id); 
+    			})
 
 
     		function sortByAvgRating(type) {
@@ -180,6 +205,7 @@
     				.data(sorted_data, d => { return d.key; })
     				.transition()
     				.duration(1000)
+    				.ease(d3.easeQuadInOut)
     				.attr("transform", (d, i) => { 
     					translate = "translate(0, " + currentSeriesY + ")";
     					currentSeriesY += squareSize * d.values.length;
