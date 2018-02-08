@@ -3,10 +3,12 @@
 <head>
 	<meta charset="utf-8">
 	<title>Series Visualization by @vpascual</title>
+	<link rel="stylesheet" href="//rawgithub.com/Caged/d3-tip/master/examples/example-styles.css">
 	<style type="text/css">
 		body {
-			 font-family: "Avenir Next" !important;
+			 font-family: "Avenir" !important;
 			 font-size: 12px;
+			 color: #333;
 		}
 
 		#buttons {
@@ -19,22 +21,49 @@
 			text-align: center;
 		}
 
-		.season {
-			font-size: 14px !important;
+		.seriesname {
+			font-size: 16px !important;
+		}
+
+		.d3-tip {
+			line-height: 1.5;
+			font-weight: normal;
+			padding: 12px;
+			background: rgba(255, 255, 255, 0.9);
+			color: black;
+			border-radius: 2px;
+			pointer-events: none;
+			font-family: "Avenir" !important;
+			border: 1px solid #ccc;
+		}
+
+		.d3-tip:after {
+			color: rgba(255, 255, 255, 0.9);
 		}
 	</style>
 </head>
-<body>
+<body>	
 	<div id="buttons">
+		<h1>Explore IMDB series ratings</h1>
 		<button id="alphabetically" style="border-style:inset;">Sort alphabetically</button>
 		<button id="rating">Sort by avg rating</button>
 		<button id="votes">Sort by avg votes</button>
 	</div>
-	<div id="viz"></div>
+	<div id="viz"></div>	
 	<script src="https://d3js.org/d3.v4.min.js"></script>
+	<script src="node_modules/d3-tip/index.js"></script>
 	<script>
+		/* Initialize tooltip */
+		var tip = d3.tip().attr('class', 'd3-tip').html(d => {
+			// console.log(d)
+				return d.Serie 
+						+ "<br>" + d.Season + "x" + d.Episode + ". " + d["Episode name"]
+						+ "<br>User rating: " + d["User Rating"]
+						+ "<br>User votes: " + d["User Votes"]
+			});
+
 		d3.csv("series_2017.csv", (error, data) => {
-			console.log(data);
+			// console.log(data);
 			data.forEach(d => {
 				d.Deviation = +d.Deviation;
 				d.Episode = +d.Episode;
@@ -47,9 +76,12 @@
 				color = d3.scaleLinear()
 					.domain([deviation_range[0], 0, deviation_range[1]])
     				//.range(["#9E3D22", "white", "#2B5C8A"]);
-    				.range(["red", "#eee", "green"])
+    				//.range(["red", "#eee", "green"])
+    				//.range(["#fc8d59", "#f7f7f7", "#91bfdb"])
+    				//.range(["#B9262A", "#F7F7F7", "#306FAB"])
+    				.range(["#A13E22", "white", "#588CBA"])
 
-    		console.log(deviation_range);
+    		// console.log(deviation_range);
     		//data = data.sort((a, b) => { return d3.ascending(a.Serie, b.Serie)});
 
     		var nested_data_by_series = d3.nest()
@@ -64,7 +96,7 @@
 				})
 				.entries(data);
 
-			console.log(nested_data_by_series)
+			// console.log(nested_data_by_series)
 
 			var nested_data = d3.nest()
 				.key(function(d) { return d.Serie; })								
@@ -86,18 +118,16 @@
 
 			var total_seasons = d3.sum(nested_data, d => { return d.values.length; }) + 1;
 
-			console.log(nested_data)
-
 			const width = 800, 
-				height = 1100;				
-
-			const margin = {top: 20, right: 10, bottom: 10, left: 10};
+				height = 1100,
+				margin = {top: 20, right: 10, bottom: 10, left: 10}
+				series_name_margin = 170;
 
 			var vizWidth = width - margin.left - margin.right,
 				vizHeight = height - margin.top - margin.bottom,
 				squareSize = (vizHeight) / total_seasons;
 
-				console.log(squareSize)
+				// console.log(squareSize)
 
 			var currentSeriesY = 0;
 
@@ -107,11 +137,14 @@
 				.append("g")
     				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+    		console.log(d3.max(data, d => { return d.Episode; }))
+
     		viz.selectAll("text")
-    			.data(d3.range(1, d3.max(data, d => { return d.Episode; })))
+    			.data(d3.range(1, d3.max(data, d => { return d.Episode; }) + 1))
     			.enter()
     				.append("text")
-    					.attr("x", (d, i) => { return squareSize * i + 200; })
+    					.attr("text-anchor", "middle")
+    					.attr("x", (d, i) => { return squareSize * i + series_name_margin + squareSize/2; })
     					.attr("y", -5)
     					.text(d => { return d; })
 
@@ -122,7 +155,7 @@
     			.append("g")
     				.attr("class", "serie")
     				.attr("transform", (d, i) => { 
-    					console.log(d);    					
+    					// console.log(d);    					
     					translate = "translate(0, " + currentSeriesY + ")";
     					currentSeriesY += squareSize * d.values.length;
     					return translate;
@@ -137,7 +170,7 @@
     				.attr("class", "seriesname")	
     				.attr("x", 0)
     				.attr("y", (d, i) => {
-    					console.log(d)
+    					// console.log(d)
     					return d.values.length * squareSize / 2;
     				})
     				.text(d => { return d.key; })
@@ -148,7 +181,7 @@
     			.append("g")
     				.attr("class", "season")    				
     				.attr("transform", (d, i) => { 
-    					translate = "translate(200, " + squareSize * i + ")";
+    					translate = "translate(" + series_name_margin + ", " + squareSize * i + ")";
     					return translate;
 					});	
 
@@ -158,8 +191,11 @@
     				.attr("y", squareSize - 5)
     				.attr("text-anchor", "end")
     				.text(d => { 
-    					console.log(d)
+    					// console.log(d)
     					return d.key; })
+
+    		/* Invoke the tip in the context of your visualization */
+			seasons.call(tip)
 
     		seasons.selectAll("rect")
     			.data(d => { return d.value.episodes; })
@@ -167,14 +203,19 @@
     			.append("rect")    				
 					.attr("width", squareSize)
 					.attr("height", squareSize)
-    				.attr("x", (d, i) => {
-    					return i * squareSize;
-    				})
+    				.attr("x", 0)
     				.attr("y", 0)
     				.attr("fill", d => { return color(d.Deviation); })
-    				.style("stroke", "white") 	
-
-
+    				.style("stroke", "white")
+    				.style("stroke-width", "1")
+    				.on('mouseover', tip.show)
+  					.on('mouseout', tip.hide)
+  					.transition()
+  					.duration(500)
+  						//.style("stroke-width", "1")
+  						.attr("x", (d, i) => {
+	    					return i * squareSize;
+	    				});
 
     		d3.selectAll("button")
     			.on("click", d => { 
@@ -183,14 +224,14 @@
 
     				d3.select(d3.event.target)
     					.style("border-style", "inset");
-    					
+
     				sortByAvgRating(d3.event.target.id); 
     			})
 
 
     		function sortByAvgRating(type) {
     			var currentSeriesY = 0;
-    			console.log("Update!")
+    			// console.log("Update!")
 
     			let sorted_data = nested_data.sort((a, b) => { 
     				if (type == "alphabetically")    					
