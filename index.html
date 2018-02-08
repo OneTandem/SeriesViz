@@ -5,6 +5,9 @@
 	<title></title>
 </head>
 <body>
+	<button id="alphabetically">Sort alphabetically</button>
+	<button id="rating">Sort by avg rating</button>
+	<button id="votes">Sort by avg votes</button>
 	<div id="viz"></div>
 	<script src="https://d3js.org/d3.v4.min.js"></script>
 	<script>
@@ -31,7 +34,12 @@
 				.key(function(d) { return d.Serie; })								
 		
 				//.key(function(d) { return d.Episode; })
-				.rollup((leaves) => { return d3.mean(leaves, p => { return p["User Rating"]; }) })
+				.rollup((leaves) => { 
+					return {
+						avg_rating: d3.mean(leaves, p => { return p["User Rating"]; }),
+						avg_votes: d3.mean(leaves, p => { return p["User Votes"]; }) 
+					}
+				})
 				.entries(data);
 
 			console.log(nested_data_by_series)
@@ -44,14 +52,15 @@
 				.rollup(function(leaves) { 
 					return {
 						avg_rating: d3.mean(leaves, p => { return p["User Rating"]; }),
-						total_rating: d3.sum(leaves, p => { return p["User Rating"]; }),
+						avg_votes: d3.mean(leaves, p => { return p["User Votes"]; }),
 						episodes: leaves
 					}})
 				.sortKeys(d3.ascending)
 				.entries(data);
 
 			nested_data.forEach((d, i) => {
-				nested_data[i].avg_rating = nested_data_by_series[i].value;
+				nested_data[i].avg_rating = nested_data_by_series[i].value.avg_rating;
+				nested_data[i].avg_votes = nested_data_by_series[i].value.avg_votes;
 			});
 
 			var total_seasons = d3.sum(nested_data, d => { return d.values.length; }) + 1;
@@ -87,7 +96,7 @@
 
     		var series = viz.selectAll("g")
     			//.data(nested_data)
-    			.data(nested_data.sort((a, b) => { return d3.ascending(a.key, b.key) }))
+    			.data(nested_data.sort((a, b) => { return d3.ascending(a.key, b.key) }), d => { return d.key; })
     			.enter()
     			.append("g")
     				.attr("class", "serie")
@@ -100,16 +109,15 @@
 
 			currentSeriesY = 0;
 
-    		series.selectAll("text")
-				.data(nested_data)
-    			.enter()
+    		series
+				//.data(nested_data.sort((a, b) => { return d3.ascending(a.key, b.key) }), d => { return d.key; })
+    			//.enter()
     			.append("text")
     				.attr("class", "seriesname")	
     				.attr("x", 0)
     				.attr("y", (d, i) => {
-    					var midY = currentSeriesY + (d.values.length * squareSize / 2);
-    					currentSeriesY += squareSize * d.values.length;    			
-    					return midY;		    				
+    					console.log(d)
+    					return d.values.length * squareSize / 2;
     				})
     				.text(d => { return d.key; })
 
@@ -123,26 +131,63 @@
     					return translate;
 					});	
 
+			seasons.selectAll("text")    			 
+    			 .append("text")
+	    			.attr("x", -10)
+    				.attr("y", 0)
+    				.text(d => { 
+    					console.log(d)
+    					return d.key; })
+
     		seasons.selectAll("rect")
     			.data(d => { return d.value.episodes; })
     			.enter()
     			.append("rect")
-    				.attr("width", squareSize)
-    				.attr("height", squareSize)
+    				.attr("width", 0)
+    				.attr("height", 0)
     				.attr("x", (d, i) => {
     					return i * squareSize;
     				})
     				.attr("y", 0)
     				.attr("fill", d => { return color(d.Deviation); })
-    				.style("stroke", "white");   
+    				.style("stroke", "white")
+    				.transition()
+    					.duration(500)
+    					.ease(d3.easeBounceInOut)
+    					.attr("width", squareSize)
+    					.attr("height", squareSize)
 
-    		/*series.selectAll("text")
-    			 .data(d => { return d.values; })
-    			 .enter()
-    			 .append("text")
-	    			 .attr("x", -10)
-    				.attr("y", squareSize)
-    				.text(d => { return d.key; })*/
+
+
+    		d3.selectAll("button")
+    			.on("click", d => { sortByAvgRating(d3.event.target.id); })
+
+
+    		function sortByAvgRating(type) {
+    			var currentSeriesY = 0;
+    			console.log("Update!")
+
+    			let sorted_data = nested_data.sort((a, b) => { 
+    				if (type == "alphabetically")    					
+    					return d3.ascending(a.key, b.key);
+    				else if (type == "rating")
+    					return d3.descending(a.avg_rating, b.avg_rating) 
+    				else if (type == "votes")
+    					return d3.descending(a.avg_votes, b.avg_votes) 
+    			});
+
+    			viz.selectAll("g")
+    				.data(sorted_data, d => { return d.key; })
+    				.transition()
+    				.duration(1000)
+    				.attr("transform", (d, i) => { 
+    					translate = "translate(0, " + currentSeriesY + ")";
+    					currentSeriesY += squareSize * d.values.length;
+    					return translate;
+    				});
+
+
+    		}    		
 		});
 	</script>
 
